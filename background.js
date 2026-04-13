@@ -11,11 +11,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-async function processImage({ url, settings }) {
+async function processImage({ url, settings = {} }) {
   if (!url) throw new Error("图片地址为空。");
 
   const base64 = await fetchImageAsBase64(url);
-
   if (settings.openaiUnified) {
     return runOpenAIUnified(base64, settings);
   }
@@ -25,8 +24,6 @@ async function processImage({ url, settings }) {
 
   return runTranslation(ocrBlocks, settings);
 }
-
-
 
 async function runOpenAIUnified(base64, settings) {
   if (!settings.openaiApiKey && !settings.ocrApiKey && !settings.translationApiKey) {
@@ -93,7 +90,6 @@ async function runOCR(base64, url, settings) {
 
 async function runTranslation(blocks, settings) {
   const provider = settings.translationProvider;
-
   if (provider === "none") return blocks;
 
   if (provider === "openai_text") {
@@ -154,9 +150,7 @@ async function ocrByOpenAI(base64, settings) {
     })
   });
 
-  if (!response.ok) {
-    throw new Error(`OpenAI OCR 失败: HTTP ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`OpenAI OCR 失败: HTTP ${response.status}`);
 
   const payload = await response.json();
   const rawText = payload?.choices?.[0]?.message?.content || "{}";
@@ -187,9 +181,7 @@ async function translateByOpenAI(blocks, settings) {
     })
   });
 
-  if (!response.ok) {
-    throw new Error(`OpenAI 翻译失败: HTTP ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`OpenAI 翻译失败: HTTP ${response.status}`);
 
   const payload = await response.json();
   const rawText = payload?.choices?.[0]?.message?.content || "{}";
@@ -203,7 +195,6 @@ async function translateByOpenAI(blocks, settings) {
 
 async function translateByLibre(endpoint, apiKey, targetLanguage, blocks) {
   const translated = [];
-
   for (const block of blocks) {
     const payload = {
       q: block.originalText,
