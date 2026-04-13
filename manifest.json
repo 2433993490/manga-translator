@@ -1,11 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "简易漫画翻译器",
-  "version": "1.0",
-  "description": "一个用于翻译网页图片的 Chrome 扩展基础框架。",
+  "name": "漫画沉浸式翻译助手",
+  "version": "2.0.0",
+  "description": "针对漫画/图片场景的 OCR + 翻译 Chrome 扩展，支持用户自定义供应商。",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -23,9 +25,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["style.css"]
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ]
     }
   ]
 }

@@ -1,16 +1,113 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>漫画沉浸式翻译助手</title>
   <style>
-    body { width: 200px; padding: 10px; font-family: sans-serif; }
-    button { width: 100%; padding: 10px; background: #ff4081; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #e91e63; }
+    :root { color-scheme: light; }
+    body {
+      width: 340px;
+      margin: 0;
+      padding: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #111827;
+      background: #f9fafb;
+    }
+    h3 { margin: 0 0 8px; font-size: 16px; }
+    .hint { margin: 0 0 12px; color: #4b5563; font-size: 12px; line-height: 1.4; }
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+    .field { margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .field:last-child { margin-bottom: 0; }
+    label { font-size: 12px; color: #374151; font-weight: 600; }
+    select, input {
+      font-size: 12px; padding: 6px 8px; border-radius: 6px; border: 1px solid #d1d5db; outline: none; background: #fff;
+    }
+    input:focus, select:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15); }
+    .switch {
+      display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #111827;
+    }
+    .actions { display: flex; gap: 8px; margin-top: 12px; }
+    button { flex: 1; border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-weight: 700; font-size: 13px; }
+    #saveBtn { background: #e5e7eb; color: #111827; }
+    #translateBtn { background: linear-gradient(90deg, #7c3aed, #ec4899); color: white; }
+    .status { margin-top: 10px; min-height: 16px; font-size: 12px; color: #065f46; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <h3>漫画翻译</h3>
-  <button id="translateBtn">翻译本页图片</button>
+  <h3>漫画沉浸式翻译助手</h3>
+  <p class="hint">支持 OpenAI 一体化（一个开关搞定 OCR+翻译）或高级自定义供应商模式。</p>
+
+  <section class="card">
+    <label class="switch">
+      <input type="checkbox" id="openaiUnified" />
+      OpenAI 一体化模式（推荐）
+    </label>
+    <div class="field">
+      <label for="openaiEndpoint">OpenAI 接口地址</label>
+      <input id="openaiEndpoint" placeholder="https://api.openai.com/v1/chat/completions" />
+    </div>
+    <div class="field">
+      <label for="openaiApiKey">OpenAI API Key</label>
+      <input id="openaiApiKey" placeholder="sk-..." type="password" />
+    </div>
+    <div class="field">
+      <label for="openaiModel">OpenAI 模型</label>
+      <input id="openaiModel" placeholder="gpt-4.1-mini" />
+    </div>
+  </section>
+
+  <section class="card" id="advancedCard">
+    <div class="field">
+      <label for="ocrProvider">OCR 供应商</label>
+      <select id="ocrProvider">
+        <option value="openai_vision">OpenAI Vision（免本地后端）</option>
+        <option value="custom_http">自定义 HTTP OCR（免本地后端）</option>
+        <option value="local_paddle">本地 PaddleOCR</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="ocrEndpoint">OCR 接口地址</label>
+      <input id="ocrEndpoint" placeholder="http://127.0.0.1:8000/api/ocr" />
+    </div>
+    <div class="field">
+      <label for="ocrApiKey">OCR API Key（可选）</label>
+      <input id="ocrApiKey" placeholder="可留空" type="password" />
+    </div>
+
+    <div class="field">
+      <label for="translationProvider">翻译供应商</label>
+      <select id="translationProvider">
+        <option value="openai_text">OpenAI 文本翻译（免本地后端）</option>
+        <option value="none">不翻译（仅 OCR）</option>
+        <option value="libretranslate">LibreTranslate</option>
+        <option value="custom_http">自定义 HTTP 翻译</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="translationEndpoint">翻译接口地址</label>
+      <input id="translationEndpoint" placeholder="https://libretranslate.com/translate" />
+    </div>
+    <div class="field">
+      <label for="translationApiKey">翻译 API Key（可选）</label>
+      <input id="translationApiKey" placeholder="可留空" type="password" />
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="field">
+      <label for="targetLanguage">目标语言</label>
+      <input id="targetLanguage" placeholder="zh" />
+    </div>
+  </section>
+
+  <div class="actions">
+    <button id="saveBtn">保存配置</button>
+    <button id="translateBtn">翻译当前页面图片</button>
+  </div>
+  <div class="status" id="status"></div>
+
   <script src="popup.js"></script>
 </body>
 </html>
