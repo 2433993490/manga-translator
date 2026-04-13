@@ -1,0 +1,19 @@
+/* 翻译遮罩层的样式 */
+.manga-translation-overlay {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #000;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  z-index: 9999;
+  /* 允许文字换行 */
+  word-wrap: break-word; 
+  white-space: pre-wrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
