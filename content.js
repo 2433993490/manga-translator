@@ -1,52 +1,67 @@
-// 监听来自 popup 的消息
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+const OVERLAY_SELECTOR = ".manga-translation-overlay, .manga-translation-container";
+
+chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "translate_images") {
-    processImages();
+    processImages(request.settings).catch((error) => {
+      console.error("图片翻译失败:", error);
+    });
   }
 });
 
-async function processImages() {
-  const images = document.querySelectorAll('img');
-  
-  for (let img of images) {
-    // 过滤掉太小的图片（通常是图标等）
-    if (img.width < 150 || img.height < 150) continue;
+async function processImages(settings) {
+  clearOldOverlays();
 
-    // 1. 获取图片 URL
-    const imageUrl = img.src;
+  const images = Array.from(document.querySelectorAll("img"));
+  for (const img of images) {
+    if (img.width < 180 || img.height < 180) continue;
 
-    // 2. 将图片信息发送给 background.js 请求 OCR 和翻译
-    chrome.runtime.sendMessage(
-      { action: "process_image", url: imageUrl },
-      (response) => {
-        if (response && response.success) {
-          // 3. 根据返回的数据在图片上绘制翻译层
-          drawTranslationOverlays(img, response.data);
-        }
-      }
-    );
+    const response = await chrome.runtime.sendMessage({
+      action: "process_image",
+      url: img.currentSrc || img.src,
+      settings
+    });
+
+    if (!response?.success) {
+      console.warn("单张图片处理失败:", response?.error || "未知错误");
+      continue;
+    }
+
+    drawTranslationOverlays(img, response.data || []);
   }
 }
 
 function drawTranslationOverlays(img, translationData) {
-  // 为了让绝对定位的遮罩层能对齐图片，我们需要获取图片在页面中的绝对位置
+  if (!translationData.length) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "manga-translation-container";
+
   const rect = img.getBoundingClientRect();
   const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-  // 假设 translationData 包含了多个文本块及其在图片上的相对坐标（百分比或像素）
-  translationData.forEach(block => {
-    const overlay = document.createElement('div');
-    overlay.className = 'manga-translation-overlay';
-    overlay.innerText = block.translatedText;
+  wrapper.style.left = `${rect.left + scrollLeft}px`;
+  wrapper.style.top = `${rect.top + scrollTop}px`;
+  wrapper.style.width = `${img.width}px`;
+  wrapper.style.height = `${img.height}px`;
 
-    // 此处假设 block.box 返回的是相对于图片左上角的相对比例 (0.0 到 1.0)
-    // 真实 API (如 Google Vision) 会返回具体坐标，需要在此进行换算
-    overlay.style.left = (rect.left + scrollLeft + (img.width * block.box.x)) + 'px';
-    overlay.style.top = (rect.top + scrollTop + (img.height * block.box.y)) + 'px';
-    overlay.style.width = (img.width * block.box.width) + 'px';
-    overlay.style.height = (img.height * block.box.height) + 'px';
+  translationData.forEach((block) => {
+    const overlay = document.createElement("div");
+    overlay.className = "manga-translation-overlay";
+    overlay.title = block.originalText || "";
+    overlay.innerText = block.translatedText || block.originalText || "";
 
-    document.body.appendChild(overlay);
+    overlay.style.left = `${img.width * block.box.x}px`;
+    overlay.style.top = `${img.height * block.box.y}px`;
+    overlay.style.width = `${img.width * block.box.width}px`;
+    overlay.style.height = `${img.height * block.box.height}px`;
+
+    wrapper.appendChild(overlay);
   });
+
+  document.body.appendChild(wrapper);
+}
+
+function clearOldOverlays() {
+  document.querySelectorAll(OVERLAY_SELECTOR).forEach((node) => node.remove());
 }
